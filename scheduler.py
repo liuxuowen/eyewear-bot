@@ -47,7 +47,7 @@ def start_scheduler():
         daily_report_job,
         'cron',
         hour=0,
-        minute=1,
+        minute=5,
         id='daily_report',
         name='Daily Report Job',
         replace_existing=True
