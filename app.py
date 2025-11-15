@@ -50,11 +50,11 @@ def wechat():
         decrypted_xml = crypto.decrypt_message(xml, msg_signature, timestamp, nonce)
         msg = parse_message(decrypted_xml)
         # 处理消息内容
-        if msg.type == 'text' and '今日' in msg.content:
+        if msg.type == 'text':
             reply_content = query_handler.process_query(msg.content)
             reply = create_reply(reply_content, msg)
         else:
-            reply = create_reply('未知命令', msg)
+            reply = create_reply('不支持非文本命令', msg)
         encrypted_reply = crypto.encrypt_message(reply.render(), nonce, timestamp)
         response = make_response(encrypted_reply)
         response.content_type = 'application/xml'
