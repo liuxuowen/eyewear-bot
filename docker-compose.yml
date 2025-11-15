@@ -4,40 +4,13 @@ services:
   eyewear-bot:
     build: .
     ports:
-      - "5000:5000"
+      - "6000:6000"
     environment:
-      - DB_HOST=${DB_HOST:-mysql}
-      - DB_PORT=${DB_PORT:-3306}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME:-eyewear_db}
+      - DB_NAME=${DB_NAME}
       - WECHAT_WEBHOOK_URL=${WECHAT_WEBHOOK_URL}
-      - FLASK_PORT=5000
-    depends_on:
-      - mysql
+      - FLASK_PORT=6000
     restart: unless-stopped
-    networks:
-      - eyewear-network
-
-  mysql:
-    image: mysql:8.0
-    environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${DB_NAME:-eyewear_db}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
-    ports:
-      - "3306:3306"
-    restart: unless-stopped
-    networks:
-      - eyewear-network
-
-volumes:
-  mysql-data:
-
-networks:
-  eyewear-network:
-    driver: bridge
