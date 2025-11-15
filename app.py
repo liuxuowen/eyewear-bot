@@ -9,6 +9,7 @@ from query_handler import QueryHandler
 from wechat_bot import WeChatBot
 from wechatpy.enterprise.crypto import WeChatCrypto
 from wechatpy.enterprise import parse_message, create_reply
+import os
 
 
 app = Flask(__name__)
@@ -20,9 +21,9 @@ scheduler = start_scheduler()
 query_handler = QueryHandler()
 
 
-TOKEN = 'UJl65h1okJHXzhov'
-AES_KEY = '4mWFLBQl7ivUob441XVm8oSqx17LSCatJsx50yWvYJn'
-CORP_ID = 'ww9de868f9ae03307b'
+TOKEN = os.getenv('WECHAT_TOKEN')
+AES_KEY = os.getenv('WECHAT_AES_KEY')
+CORP_ID = os.getenv('WECHAT_CORP_ID')
 
 crypto = WeChatCrypto(TOKEN, AES_KEY, CORP_ID)
 
@@ -50,7 +51,8 @@ def wechat():
         msg = parse_message(decrypted_xml)
         # 处理消息内容
         if msg.type == 'text' and '今日' in msg.content:
-            reply = create_reply('这是今日数据...', msg)
+            reply_content = query_handler.process_query(msg.content)
+            reply = create_reply(reply_content, msg)
         else:
             reply = create_reply('未知命令', msg)
         encrypted_reply = crypto.encrypt_message(reply.render(), nonce, timestamp)
@@ -60,45 +62,6 @@ def wechat():
     except Exception as e:
         return str(e), 400
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    """
-    Webhook endpoint for receiving messages from WeChat Work Bot
-    
-    Expected JSON payload:
-    {
-        "msgtype": "text",
-        "text": {
-            "content": "query text"
-        }
-    }
-    """
-    try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({"error": "No data provided"}), 400
-        
-        # Extract message content
-        msgtype = data.get('msgtype', '')
-        
-        if msgtype == 'text':
-            content = data.get('text', {}).get('content', '')
-            
-            # Process the query
-            response = query_handler.process_query(content)
-            
-            # Send response
-            bot = WeChatBot()
-            bot.send_text_message(response)
-            
-            return jsonify({"status": "success", "message": "Query processed"}), 200
-        else:
-            return jsonify({"status": "ignored", "message": "Non-text message"}), 200
-            
-    except Exception as e:
-        print(f"Error in webhook: {str(e)}")
-        return jsonify({"error": str(e)}), 500
 
 
 @app.route('/health', methods=['GET'])
