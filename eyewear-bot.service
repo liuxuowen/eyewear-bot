@@ -1,0 +1,26 @@
+[Unit]
+Description=Eyewear Bot - WeChat Work Integration
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/eyewear-bot
+Environment="PATH=/opt/eyewear-bot/venv/bin"
+EnvironmentFile=/opt/eyewear-bot/.env
+ExecStart=/opt/eyewear-bot/venv/bin/python /opt/eyewear-bot/app.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/eyewear-bot/output.log
+StandardError=append:/var/log/eyewear-bot/error.log
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/eyewear-bot /var/log/eyewear-bot
+
+[Install]
+WantedBy=multi-user.target

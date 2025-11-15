@@ -174,35 +174,35 @@ eyewear-bot/
 
 ## 生产环境部署建议
 
-### 使用 Gunicorn
+### 方式一：使用 Docker (推荐)
+```bash
+# 使用 docker-compose 快速部署
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f eyewear-bot
+
+# 停止服务
+docker-compose down
+```
+
+### 方式二：使用 Gunicorn
 ```bash
 pip install gunicorn
 gunicorn -w 4 -b 0.0.0.0:5000 app:app
 ```
 
-### 使用 systemd 服务
-创建 `/etc/systemd/system/eyewear-bot.service`:
-```ini
-[Unit]
-Description=Eyewear Bot Service
-After=network.target
-
-[Service]
-Type=simple
-User=your_user
-WorkingDirectory=/path/to/eyewear-bot
-Environment="PATH=/path/to/venv/bin"
-ExecStart=/path/to/venv/bin/python app.py
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-```
-
-启动服务：
+### 方式三：使用 systemd 服务
+复制 `eyewear-bot.service` 到 `/etc/systemd/system/`:
 ```bash
+sudo cp eyewear-bot.service /etc/systemd/system/
 sudo systemctl enable eyewear-bot
 sudo systemctl start eyewear-bot
+```
+
+查看服务状态：
+```bash
+sudo systemctl status eyewear-bot
 ```
 
 ## 故障排查
