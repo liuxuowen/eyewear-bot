@@ -12,7 +12,7 @@ COPY *.py .
 COPY *.sql .
 
 # Expose port
-EXPOSE 5000
+EXPOSE 6000
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
