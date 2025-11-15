@@ -8,7 +8,7 @@ from scheduler import start_scheduler
 from query_handler import QueryHandler
 from wechat_bot import WeChatBot
 from wechatpy.enterprise.crypto import WeChatCrypto
-from wechatpy.enterprise.messages import parse_message, create_reply
+from wechatpy.enterprise import parse_message, create_reply
 
 
 app = Flask(__name__)
