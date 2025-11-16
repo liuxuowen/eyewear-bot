@@ -27,30 +27,47 @@ class QueryHandler:
         
         Args:
             query_text: Query text from user
-            
         Returns:
             str: Response message
         """
         query_text = query_text.strip()
         logging.info(f"收到 query_text: {query_text}")
 
-        # Handle "今日" query
-        if query_text == "今日":
-            logging.info("分支: 今日查询")
+        # 今日/今天
+        if query_text in ["今日", "今天"]:
+            logging.info("分支: 今日/今天查询")
             return self.handle_today_query()
 
-        # Handle "最近n日" query
-        match = re.match(r'最近(\d+)日', query_text)
+        # 昨日/昨天
+        if query_text in ["昨日", "昨天"]:
+            logging.info("分支: 昨日/昨天查询")
+            return self.handle_yesterday_query()
+
+        # 最近n日/最近n天
+        match = re.match(r'最近(\d+)(日|天)', query_text)
         if match:
             days = int(match.group(1))
-            logging.info(f"分支: 最近{days}日查询")
-            return self.handle_recent_days_query(days)
+            logging.info(f"分支: 最近{days}{match.group(2)}查询")
+            return self.handle_recent_days_query(days, include_date_group=True)
 
         # Unknown query
         logging.info("分支: 未知查询格式")
         return self.handle_unknown_query()
     
     def handle_today_query(self):
+        def handle_yesterday_query(self):
+            """
+            Handle yesterday's data query
+            Returns:
+                str: Formatted yesterday's statistics
+            """
+            try:
+                yesterday = datetime.now().date() - timedelta(days=1)
+                stats = self.db.get_combined_stats(yesterday, yesterday)
+                message = format_today_report(stats)
+                return message
+            except Exception as e:
+                return f"查询昨日数据时出错: {str(e)}"
         """
         Handle today's data query
         
@@ -65,7 +82,7 @@ class QueryHandler:
         except Exception as e:
             return f"查询今日数据时出错: {str(e)}"
     
-    def handle_recent_days_query(self, days):
+    def handle_recent_days_query(self, days, include_date_group=False):
         """
         Handle recent days data query
         
@@ -78,15 +95,17 @@ class QueryHandler:
         try:
             if days <= 0:
                 return "请输入有效的天数（大于0）"
-            
             if days > 365:
                 return "查询天数不能超过365天"
-            
             end_date = datetime.now().date()
             start_date = end_date - timedelta(days=days-1)
-            
             stats = self.db.get_combined_stats(start_date, end_date)
             message = format_recent_days_report(stats, days)
+            # 增加日期分组（倒序）
+            if include_date_group and hasattr(self.db, 'get_stats_by_date'):
+                date_stats = self.db.get_stats_by_date(start_date, end_date)
+                date_lines = [f"{d}: {s}" for d, s in sorted(date_stats.items(), reverse=True)]
+                message += "\n\n📅 按日期分组（倒序）：\n" + "\n".join(date_lines)
             return message
         except Exception as e:
             return f"查询最近{days}日数据时出错: {str(e)}"

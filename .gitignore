@@ -28,6 +28,8 @@ ENV/
 # Environment Variables
 .env
 .env.example
+deploy.sh
+restart.sh
 
 # IDE
 .vscode/
