@@ -10,6 +10,7 @@ from wechat_bot import WeChatBot
 from wechatpy.enterprise.crypto import WeChatCrypto
 from wechatpy.enterprise import parse_message, create_reply
 import os
+import logging
 
 
 app = Flask(__name__)
@@ -53,6 +54,28 @@ def wechat():
         if msg.type == 'text':
             reply_content = query_handler.process_query(msg.content)
             reply = create_reply(reply_content, msg)
+        elif msg.type == 'event':
+            # 处理事件消息（如菜单点击）
+            ev = getattr(msg, 'event', '') or getattr(msg, 'Event', '') or ''
+            key = getattr(msg, 'key', '') or getattr(msg, 'EventKey', '') or ''
+            logging.info(f"收到 event: {ev}, key: {key}")
+            if str(ev).lower() == 'click':
+                k = str(key).upper()
+                logging.info(f"menu click key received: {k}")
+                if k == 'TODAY_ORDER':
+                    # 菜单点击等同于用户输入“今日”
+                    reply_content = query_handler.process_query('今日')
+                elif k == 'YESTERDAY_ORDER':
+                    # 菜单点击等同于用户输入“昨日”
+                    reply_content = query_handler.process_query('昨日')
+                elif k == 'THIS_MONTH_ORDER':
+                    # 菜单点击等同于用户输入“本月”
+                    reply_content = query_handler.process_query('本月')
+                else:
+                    reply_content = '不能处理的菜单命令'
+                reply = create_reply(reply_content, msg)
+            else:
+                reply = create_reply('不能处理的菜单命令', msg)
         else:
             reply = create_reply('不支持非文本命令', msg)
         encrypted_reply = crypto.encrypt_message(reply.render(), nonce, timestamp)

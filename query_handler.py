@@ -43,6 +43,16 @@ class QueryHandler:
             logging.info("分支: 昨日/昨天查询")
             return self.handle_yesterday_query()
 
+        # 本月
+        if query_text in ["本月"]:
+            logging.info("分支: 本月查询")
+            return self.handle_this_month_query()
+
+        # 上个月
+        if query_text in ["上个月", "上月"]:
+            logging.info("分支: 上个月查询")
+            return self.handle_last_month_query()
+
         # 最近n日/最近n天
         match = re.match(r'最近(\d+)(日|天)', query_text)
         if match:
@@ -54,23 +64,39 @@ class QueryHandler:
         logging.info("分支: 未知查询格式")
         return self.handle_unknown_query()
     
+    def handle_this_month_query(self):
+        """
+        查询本月数据（从当月1号到今天）
+        """
+        try:
+            today = datetime.now().date()
+            start_date = today.replace(day=1)
+            stats = self.db.get_combined_stats(start_date, today)
+            message = format_recent_days_report(stats, (today - start_date).days + 1)
+            return message
+        except Exception as e:
+            logging.error(f"handle_this_month_query 异常: {str(e)}")
+            return f"查询本月数据时出错: {str(e)}"
+
+    def handle_last_month_query(self):
+        """
+        查询上个月数据（从上月1号到上月最后一天）
+        """
+        try:
+            today = datetime.now().date()
+            first_day_this_month = today.replace(day=1)
+            last_day_last_month = first_day_this_month - timedelta(days=1)
+            first_day_last_month = last_day_last_month.replace(day=1)
+            stats = self.db.get_combined_stats(first_day_last_month, last_day_last_month)
+            message = format_recent_days_report(stats, (last_day_last_month - first_day_last_month).days + 1)
+            return message
+        except Exception as e:
+            logging.error(f"handle_last_month_query 异常: {str(e)}")
+            return f"查询上个月数据时出错: {str(e)}"
+    
     def handle_today_query(self):
-        def handle_yesterday_query(self):
-            """
-            Handle yesterday's data query
-            Returns:
-                str: Formatted yesterday's statistics
-            """
-            try:
-                yesterday = datetime.now().date() - timedelta(days=1)
-                stats = self.db.get_combined_stats(yesterday, yesterday)
-                message = format_today_report(stats)
-                return message
-            except Exception as e:
-                return f"查询昨日数据时出错: {str(e)}"
         """
         Handle today's data query
-        
         Returns:
             str: Formatted today's statistics
         """
@@ -81,14 +107,26 @@ class QueryHandler:
             return message
         except Exception as e:
             return f"查询今日数据时出错: {str(e)}"
+
+    def handle_yesterday_query(self):
+        """
+        Handle yesterday's data query
+        Returns:
+            str: Formatted yesterday's statistics
+        """
+        try:
+            yesterday = datetime.now().date() - timedelta(days=1)
+            stats = self.db.get_combined_stats(yesterday, yesterday)
+            message = format_today_report(stats)
+            return message
+        except Exception as e:
+            return f"查询昨日数据时出错: {str(e)}"
     
     def handle_recent_days_query(self, days, include_date_group=False):
         """
         Handle recent days data query
-        
         Args:
             days: Number of recent days to query
-            
         Returns:
             str: Formatted statistics for recent days
         """
@@ -102,10 +140,11 @@ class QueryHandler:
             stats = self.db.get_combined_stats(start_date, end_date)
             message = format_recent_days_report(stats, days)
             # 增加日期分组（倒序）
-            if include_date_group and hasattr(self.db, 'get_stats_by_date'):
+            if hasattr(self.db, 'get_stats_by_date'):
                 date_stats = self.db.get_stats_by_date(start_date, end_date)
-                date_lines = [f"{d}: {s}" for d, s in sorted(date_stats.items(), reverse=True)]
-                message += "\n\n📅 按日期分组（倒序）：\n" + "\n".join(date_lines)
+                message += "\n\n📅 按日期分组（倒序）："
+                for d in sorted(date_stats.keys(), reverse=True):
+                    message += f"\n{d}: {date_stats[d]}"
             return message
         except Exception as e:
             return f"查询最近{days}日数据时出错: {str(e)}"
@@ -119,11 +158,17 @@ class QueryHandler:
         """
         return """❓ 未知查询格式
 
-支持的查询命令:
-• 今日 - 查询今日的订单和线索数据
-• 最近n日 - 查询最近n天的数据（例如：最近7日）
+    支持的查询命令:
+    • 今日/今天 - 查询今日的订单和线索数据
+    • 昨日/昨天 - 查询昨日的订单和线索数据
+    • 本月 - 查询本月数据
+    • 上个月 - 查询上个月数据
+    • 最近n日/最近n天 - 查询最近n天的数据（例如：最近7日、最近30天）
 
-示例:
-@机器人 今日
-@机器人 最近7日
-@机器人 最近30日"""
+    示例:
+    @机器人 今日/今天
+    @机器人 昨天/昨日
+    @机器人 本月
+    @机器人 上个月/上月
+    @机器人 最近7日
+    @机器人 最近30天"""

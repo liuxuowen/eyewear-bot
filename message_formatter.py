@@ -60,7 +60,12 @@ def format_stats_message(stats, title="数据统计报告"):
             sales_name = item.get('sales', '未知')
             orders_count = item.get('orders_count', 0)
             total_sales = item.get('total_sales', 0)
-            message_parts.append(f"  • {sales_name}: {orders_count} 个订单, 总额: ¥{total_sales:.2f}")
+            # Display total sales as integer
+            try:
+                total_sales_int = int(total_sales)
+            except Exception:
+                total_sales_int = 0
+            message_parts.append(f"  • {sales_name}: {orders_count} 个订单, 总额: ¥{total_sales_int}")
         message_parts.append("")
     
     message_parts.append("=" * 30)
